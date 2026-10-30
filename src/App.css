@@ -1,0 +1,156 @@
+@import "tailwindcss";
+
+@theme {
+  --color-pos-dark: #1e293b;
+  --color-pos-bg: #f1f5f9;
+  --color-pos-primary: #10b981;
+  --color-pos-primary-dark: #059669;
+}
+
+/* Opcional: Para quitar márgenes por defecto del navegador */
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* ============================================================
+   MICRO-INTERACCIONES GLOBALES
+   Ligeras y discretas: solo se animan transform / opacity / color
+   (propiedades aceleradas por GPU) para no penalizar el rendimiento.
+   Van en @layer base para que cualquier utilidad de Tailwind
+   (ej. disabled:cursor-not-allowed) las pueda sobreescribir.
+   ============================================================ */
+@layer base {
+  /* El cursor deja claro qué es accionable */
+  button,
+  [role="button"],
+  a,
+  summary,
+  select,
+  label[for],
+  input[type="checkbox"],
+  input[type="radio"] {
+    cursor: pointer;
+  }
+
+  /* …y qué está deshabilitado */
+  button:disabled,
+  [role="button"][aria-disabled="true"],
+  select:disabled,
+  input:disabled {
+    cursor: not-allowed;
+  }
+
+  /* Transición base para que hover y foco se sientan suaves */
+  button,
+  [role="button"],
+  a {
+    transition-property: color, background-color, border-color, box-shadow, transform, opacity;
+    transition-duration: 160ms;
+    transition-timing-function: ease-out;
+  }
+
+  /* Tacto al presionar: un pequeño "hundimiento" satisfactorio */
+  button:not(:disabled):active,
+  [role="button"]:not([aria-disabled="true"]):active {
+    transform: scale(0.97);
+  }
+
+  /* Foco visible (solo navegación por teclado), discreto y accesible */
+  button:focus-visible,
+  a:focus-visible,
+  select:focus-visible,
+  summary:focus-visible,
+  [role="button"]:focus-visible {
+    outline: 2px solid var(--color-pos-primary);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+
+  /* Scrollbars finas que combinan con el tema */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+    transition: background-color 160ms ease-out;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: #94a3b8;
+  }
+}
+
+/* ============================================================
+   ANIMACIONES DE ENTRADA (keyframes + utilidades reutilizables)
+   Curva "salida suave": cubic-bezier(0.16, 1, 0.3, 1)
+   ============================================================ */
+@keyframes pos-overlay-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes pos-pop-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes pos-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes pos-fade-up {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes pos-row-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes pos-check-pop {
+  0%   { opacity: 0; transform: scale(0.4); }
+  60%  { opacity: 1; transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+/* Fondo oscuro de los modales */
+.pos-overlay-in   { animation: pos-overlay-in 160ms ease-out; }
+/* Tarjeta/panel de los modales */
+.pos-modal-panel  { animation: pos-pop-in 220ms cubic-bezier(0.16, 1, 0.3, 1); }
+/* Entrada de página al navegar */
+.pos-fade-in      { animation: pos-fade-in 240ms ease-out; }
+/* Aparición suave de bloques de contenido */
+.pos-fade-up      { animation: pos-fade-up 260ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+/* Nueva fila en una tabla/lista (ej. carrito) */
+.pos-row-in       { animation: pos-row-in 200ms ease-out; }
+/* "Pop" del check de venta completada */
+.pos-check-pop    { animation: pos-check-pop 420ms cubic-bezier(0.16, 1, 0.3, 1); }
+
+/* Respeta a quien prefiere menos movimiento (accesibilidad) */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Ocultar iconos nativos de revelar/borrar contraseñas (para evitar superposición con el icono de ojo personalizado) */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear,
+input[type="text"]::-ms-reveal,
+input[type="text"]::-ms-clear {
+  display: none !important;
+  width: 0;
+  height: 0;
+}
+

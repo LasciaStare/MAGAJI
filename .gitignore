@@ -1,0 +1,63 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Dependencies
+node_modules
+dist
+dist-ssr
+*.local
+
+# Build output
+target/
+Cargo.lock
+src-tauri/target/
+
+# Database
+inventario.db
+*.db
+
+# IDE and Editor
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.iml
+*.sublime-workspace
+*.sublime-project
+.github/
+.claude/
+CLAUDE.md
+AGENTS.md
+
+# OS
+Thumbs.db
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Tauri
+src-tauri/target/
+tauri.conf.json.bak
+src-tauri/resources/ocr/
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+~*

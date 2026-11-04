@@ -1,20 +1,20 @@
-# Contributing to Inventario POS
+# Contributing to MAGAJI
 
-Thank you for your interest in contributing to Inventario POS. This document provides guidelines for development and contribution.
+Thank you for your interest in contributing to MAGAJI. This document provides guidelines for development and contribution.
 
 ## Getting Started
 
 1. Clone the repository
-2. Install dependencies: `npm install`
-3. Read CLAUDE.md for architecture and conventions
-4. Review the .github/copilot-instructions.md for implementation guidelines
+2. Install dependencies: `npm ci`
+3. Read README.md for architecture and conventions
+4. Review the documentation in `docs/` for implementation guidelines
 
 ## Development Setup
 
 ```bash
-git clone https://github.com/criss131/Inventario.git
-cd Inventario
-npm install
+git clone https://github.com/LasciaStare/MAGAJI.git
+cd MAGAJI
+npm ci
 npm run tauri dev
 ```
 
@@ -113,9 +113,10 @@ Update documentation for:
 Documentation files:
 
 - README.md - User guide and project overview
-- CLAUDE.md - Developer guide and conventions
+- CONTRIBUTING.md - Contribution guidelines
 - docs/CODIGOS_BARRAS.md - Barcode system details
-- .github/copilot-instructions.md - AI assistant guidelines
+- docs/OCR-DISTRIBUCION.md - OCR packaging and distribution
+- docs/MODELOS-IA.md - AI model selection
 
 ## Pull Request Process
 
@@ -181,8 +182,8 @@ PR title should follow semantic format: `feat:`, `fix:`, `docs:`, etc.
 For questions or bug reports:
 
 1. Check existing GitHub issues
-2. Review CLAUDE.md and README.md
-3. Search documentation in docs/ folder
+2. Review README.md and CONTRIBUTING.md
+3. Search documentation in the docs/ folder
 4. Create a detailed GitHub issue if needed
 
 ## License

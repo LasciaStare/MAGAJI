@@ -1,325 +1,346 @@
-# MAGAJI
-# POS System
+<div align="center">
 
-Professional point-of-sale inventory management system built with Tauri, React, and TypeScript.
+<img src="docs/assets/logo.png" width="112" alt="MAGAJI" />
 
-## Project Status
+<h1>MAGAJI</h1>
 
-In active development.
+**Punto de venta, inventario y facturación para negocios que quieren vender mejor.**
 
-### OCR incluido en Windows (1.2.6)
+Aplicación de escritorio para Windows que centraliza ventas, stock, clientes, etiquetas, reportes y facturación en un solo lugar. Rápida, local y sin suscripciones.
 
-La lectura de facturas usa RapidOCR en Rust con modelos PP-OCRv6 Small incluidos en el instalador. No requiere Python en la PC del usuario. El motor trabaja localmente; el análisis posterior con IA requiere conexión y una clave configurada.
+[![Versión](https://img.shields.io/badge/version-1.2.8-10b981?style=flat-square)](https://github.com/LasciaStare/MAGAJI/releases)
+[![Licencia](https://img.shields.io/badge/license-Apache%202.0-blue?style=flat-square)](LICENSE)
+[![Plataforma](https://img.shields.io/badge/platform-Windows%2010%2F11%20x64-0ea5e9?style=flat-square)](https://github.com/LasciaStare/MAGAJI/releases)
+[![Tauri](https://img.shields.io/badge/Tauri-2-24c8db?style=flat-square)](https://tauri.app)
+[![React](https://img.shields.io/badge/React-19-61dafb?style=flat-square)](https://react.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178c6?style=flat-square)](https://www.typescriptlang.org)
 
-`npm run tauri build` prepara los recursos verificados y genera el instalador Windows x64. WebView2 se reutiliza si ya está instalado y solo se descarga cuando falta. Véase [distribución de OCR](docs/OCR-DISTRIBUCION.md) para requisitos, licencias y pruebas.
+[Características](#características-principales) · [Capturas](#capturas-de-pantalla) · [Instalación](#instalación) · [Desarrollo](#desarrollo) · [Documentación](#documentación)
 
-### Modelos de IA disponibles (1.2.7)
+</div>
 
-Los ajustes de IA de Configuración e Importar factura consultan el catálogo actual de Groq, OpenRouter o Google mediante **Actualizar modelos**. Incluyen búsqueda y filtro de gratuitos en OpenRouter, con soporte para `openrouter/free`. Véase [selección de modelos](docs/MODELOS-IA.md).
+---
 
-## Stack
+## Capturas de pantalla
 
-- Tauri v2 (desktop application for Windows, macOS, Linux)
-- React 19 with TypeScript (strict mode)
-- Tailwind CSS v4
-- SQLite database
-- React Router v7 for navigation
-- Vite as build tool
+<p align="center">
+  <img src="docs/capturas/ventas.png" alt="Módulo de ventas de MAGAJI" width="100%" />
+</p>
 
-## Quick Start
+<table>
+  <tr>
+    <td width="33%" valign="top">
+      <img src="docs/capturas/inventario.png" alt="Control de inventario" width="100%" />
+      <br />
+      <sub><b>Inventario</b> — entradas, salidas, auditoría e historial de ventas.</sub>
+    </td>
+    <td width="33%" valign="top">
+      <img src="docs/capturas/etiquetas.png" alt="Impresión de etiquetas" width="100%" />
+      <br />
+      <sub><b>Etiquetas</b> — impresión masiva TSPL con código de barras.</sub>
+    </td>
+    <td width="33%" valign="top">
+      <img src="docs/capturas/reportes.png" alt="Panel de reportes" width="100%" />
+      <br />
+      <sub><b>Reportes</b> — métricas, gráficas y stock crítico en tiempo real.</sub>
+    </td>
+  </tr>
+</table>
 
-### Prerequisites
+---
 
-- Node.js 22+ and npm
-- Rust toolchain (for Tauri)
-- Git
+## ¿Qué es MAGAJI?
 
-### Installation
+MAGAJI es un sistema de punto de venta (POS) e inventario diseñado para pequeños y medianos negocios que necesitan operar rápido, sin depender de internet ni de plataformas externas.
+
+Toda la operación —productos, ventas, clientes, movimientos, configuración y respaldos— se guarda localmente en una base de datos SQLite. La importación inteligente de facturas es la única función que utiliza servicios externos, y solo cuando el usuario lo decide.
+
+### Estado del proyecto
+
+MAGAJI **1.2.8** es una versión estable con instalador para Windows x64. Incluye OCR local, integración con proveedores de IA, impresión térmica y de etiquetas, respaldos automáticos y documentación técnica para operación y desarrollo.
+
+### Pensado para
+
+- Tiendas de barrio, minimercados y papelerías.
+- Negocios con venta por mostrador y control de stock.
+- Comercios que imprimen etiquetas con código de barras.
+- Equipos que necesitan reportes claros sin configurar servidores.
+
+---
+
+## Características principales
+
+### Punto de venta ágil
+
+- Búsqueda de productos por nombre o código de barras, con soporte para lector.
+- Ingreso rápido de cantidades y atajos de teclado.
+- Carrito con edición de cantidades, descuentos y notas para la tirilla.
+- Asignación de cliente o venta a **Consumidor Final**.
+- Cobro en un paso y confirmación inmediata.
+- Historial de últimas ventas con detalle, reimpresión, PDF, edición y anulación.
+- La anulación devuelve automáticamente las unidades al inventario.
+
+### Inventario y catálogo
+
+- Catálogo con categoría, precio de compra, precio de venta, stock y stock mínimo.
+- Nombre corto para etiquetas (máximo 16 caracteres).
+- Alertas de stock crítico y reposición.
+- Registro de entradas y salidas con motivo, usuario y fecha.
+- Historial de auditoría y de ventas en una sola vista.
+- Validaciones para evitar códigos duplicados y movimientos inconsistentes.
+
+### Etiquetas y códigos de barras
+
+- Impresión masiva de etiquetas en formato TSPL de tres columnas.
+- Dos modos de cantidad: **según stock** o **personalizada por producto**.
+- Selección individual, por rango con **Shift + clic** o de todos los resultados visibles.
+- Búsqueda por nombre, nombre de etiqueta o código, con filtro por categoría.
+- Revisión previa con stock y cantidad de etiquetas antes de imprimir.
+- Códigos de fábrica de hasta 13 dígitos y generación automática de códigos internos RCN con prefijo `20` para productos sin código.
+- Límite de 50.000 etiquetas por trabajo.
+
+### Clientes y fundaciones
+
+- Directorio con documento único, teléfono, correo, dirección y notas.
+- Clasificación de clientes normales y miembros de fundaciones.
+- Gestión de fundaciones con código de miembro.
+- Campos personalizados configurables para adaptar el formulario al negocio.
+- Creación rápida de clientes desde el punto de venta.
+- Eliminación con reasignación de ventas para no perder historial.
+
+### Reportes y análisis
+
+- KPIs de ventas netas, valor del inventario y stock crítico.
+- Comparativa de **ventas vs. compras** por rango de fechas.
+- Distribución de productos por categoría con filtro interactivo.
+- Niveles de stock por producto y resaltado de artículos críticos.
+- Exportación del inventario a CSV compatible con Excel.
+
+### Impresión y facturación
+
+- Tirilla térmica ESC/POS para impresoras de 58 mm y 80 mm.
+- Diseño de tirilla totalmente editable: logo, textos, separadores, orden, tamaño, negrita y variables.
+- Reimpresión de ventas históricas.
+- Generación de PDF en dos formatos: tirilla o factura electrónica en carta.
+- Factura electrónica con QR, IVA y CUFE representativo.
+- Datos del negocio, NIT/RUC, régimen, resolución y pie de página configurables.
+
+> La factura electrónica de MAGAJI es una representación gráfica para uso operativo. No sustituye los servicios de facturación electrónica certificados ante la DIAN u otra autoridad tributaria.
+
+### Importación inteligente de facturas
+
+- **OCR local** con RapidOCR y modelos PP-OCRv6 incluidos en el instalador. No requiere Python en el equipo del usuario.
+- Análisis opcional con IA usando **Google AI Studio (Gemini)**, **OpenRouter** o **Groq**.
+- Catálogo de modelos actualizable desde la aplicación, con búsqueda y filtro de modelos gratuitos en OpenRouter.
+- Tabla editable con nombres, etiqueta, cantidades, costos, precios, categoría y código de barras.
+- Asociación asistida con productos existentes por código o nombre.
+- Borrador persistente y control de progreso para evitar ingresos duplicados.
+- Revisión obligatoria antes de guardar.
+
+El OCR funciona sin conexión. El análisis con IA requiere internet y una clave del proveedor elegido. La clave se guarda únicamente en el almacenamiento local del equipo y nunca se incluye en el instalador.
+
+### Respaldos y seguridad
+
+- Respaldos manuales y automáticos de la base de datos.
+- Archivos comprimidos `.db.gz` con rotación por límite de copias.
+- Carpeta de destino local o sincronizada con Google Drive, OneDrive u otro servicio.
+- Acceso protegido por contraseña con hash SHA-256.
+- Contraseña inicial: `admin` (cámbiala desde **Configuración → Contraseña**).
+- Datos almacenados localmente: no se envía la base de datos a ningún servidor.
+
+### Configuración a tu medida
+
+- Datos del negocio, IVA, régimen y resolución.
+- Selección de impresora térmica y de etiquetas instaladas en Windows.
+- Tamaño de papel, escala y negrita de la tirilla.
+- Editor visual del contenido de la tirilla.
+- Programación de respaldos y retención de copias.
+- Cambio de contraseña y ajustes de IA.
+
+---
+
+## Stack tecnológico
+
+| Capa | Tecnologías |
+| --- | --- |
+| Interfaz | React 19, TypeScript 5.8, Tailwind CSS 4, React Router 7 |
+| Componentes y gráficas | Lucide React, Recharts |
+| Escritorio | Tauri 2, Rust |
+| Base de datos | SQLite mediante `tauri-plugin-sql` |
+| Documentos | jsPDF, qrcode |
+| OCR | RapidOCR, ONNX Runtime, modelos PP-OCRv6 Small |
+| IA | Google AI Studio, OpenRouter, Groq |
+| Build | Vite 7, npm |
+
+---
+
+## Instalación
+
+### Para usuarios
+
+1. Descarga el instalador más reciente desde [Releases](https://github.com/LasciaStare/MAGAJI/releases).
+2. Ejecuta el instalador NSIS y sigue las instrucciones.
+3. Abre MAGAJI e inicia sesión con la contraseña inicial `admin`.
+4. Cambia la contraseña en **Configuración → Contraseña**.
+
+**Requisitos**
+
+- Windows 10 u 11 de 64 bits.
+- WebView2. Si no está instalado, el instalador lo descarga automáticamente.
+- Conexión a internet solo para la instalación de WebView2 (si falta) y para el análisis de facturas con IA.
+
+> El instalador incluye los modelos de OCR, las bibliotecas de ONNX Runtime y las dependencias de Visual C++. No necesitas instalar Python, ONNX ni Visual C++ por separado.
+
+### Para desarrollo
+
+**Requisitos**
+
+- Node.js 22 o superior y npm.
+- Rust estable y las dependencias de Tauri para Windows.
+- Git.
 
 ```bash
-git clone https://github.com/LasciaStare/MAGAJI
+git clone https://github.com/LasciaStare/MAGAJI.git
 cd MAGAJI
-npm install
+npm ci
+npm run tauri dev
 ```
 
-### Development
+Para generar el instalador:
 
 ```bash
-# Full development mode (Tauri + frontend)
-npm run tauri dev
-
-# Frontend only in browser
-npm run dev
-
-# Type-check and build
-npm run build
-
-# Preview production build
-npm run preview
-
-# Compile Rust backend only
-cd src-tauri && cargo build
+npm run tauri build
 ```
 
-## Architecture
+El instalador NSIS se genera en `src-tauri/target/release/bundle/nsis/`.
 
-### High-Level Design
+> `npm run tauri dev` y `npm run tauri build` preparan y verifican automáticamente los recursos de OCR. La primera vez requieren conexión para descargar los modelos.
 
-The application follows a clear separation of concerns:
+---
 
-1. Frontend (React/TypeScript) - User interface, routing, state management
-2. Middleware (TypeScript services) - Business logic, data validation, calculations
-3. Database Layer (SQLite) - Persistent data storage
-4. Tauri Backend (Rust) - Window management and plugin initialization
+## Desarrollo
 
-All business logic resides in TypeScript. The Rust backend only initializes Tauri plugins and manages the application window.
+### Comandos disponibles
 
-### Database Schema
+| Comando | Descripción |
+| --- | --- |
+| `npm run dev` | Inicia solo el frontend en el navegador (algunas funciones requieren Tauri). |
+| `npm run build` | Verifica TypeScript y genera la build de producción. |
+| `npm run preview` | Previsualiza la build de producción. |
+| `npm run tauri dev` | Inicia la aplicación completa con Tauri y Rust. |
+| `npm run tauri build` | Genera el instalador de Windows. |
+| `npm run ocr:prepare` | Descarga y verifica los recursos de OCR. |
+| `npm run test:etiquetas` | Ejecuta las pruebas de etiquetas. |
+| `npm run test:facturas` | Ejecuta las pruebas del importador de facturas (requiere Python para SQLite temporal). |
+| `cargo test --release --manifest-path src-tauri/Cargo.toml --lib` | Ejecuta las pruebas del backend Rust. |
 
-Core tables:
+### Arquitectura
 
-- **productos** - Product catalog with barcode, pricing, and stock
-- **clientes** - Customer directory and contact information
-- **ventas** - Sales transactions (invoice headers)
-- **venta_detalles** - Sale line items with product references
-- **movimientos_inventario** - Inventory audit trail
-- **fundaciones** - Organizations for member-type customers
-
-Foreign key constraints enforce data integrity.
-
-### Key Features
-
-1. Sales Management - Process sales with customer tracking and payment methods
-2. Inventory Control - Stock tracking with minimum thresholds and movement history
-3. Product Catalog - EAN-13 barcode support with automatic code generation for products without factory barcodes
-4. Customer Database - Customer information with classification and membership tracking
-5. Reports - Sales and inventory reports with data export
-6. Label Printing - Generate and print product labels with barcodes
-
-### Impresión masiva de etiquetas (1.1.2)
-
-En **Etiquetas**, busque por nombre, nombre de etiqueta o código y filtre por categoría.
-Marque productos individualmente o use **Seleccionar todos** para los resultados visibles;
-las selecciones se conservan al cambiar el filtro. Use **Shift + clic** en la fila o casilla
-para marcar o desmarcar un rango de productos visibles.
-
-Elija **Según stock** para imprimir una etiqueta por unidad disponible, o **Personalizada por
-producto** para escribir cuántas etiquetas quiere de cada seleccionado (inicialmente 1).
-En modo personalizado puede imprimir incluso productos sin stock o más etiquetas que el stock.
-
-La tabla muestra nombre, nombre de etiqueta, código, categoría, compra, venta, stock y cantidad
-de etiquetas. **Revisar e imprimir** consulta el inventario actual y muestra los seleccionados
-antes de confirmar, con stock y cantidad de etiquetas separados. Si cambia el stock o algún
-dato del producto después de revisar, se actualiza la revisión antes de permitir la impresión.
-Se conserva el formato TSPL de tres columnas y el nombre impreso de máximo 16 caracteres.
-El límite por trabajo es de 50.000 etiquetas.
-
-### Importar facturas con Gemini (1.2.0)
-
-En **Inventario → Importar factura con IA**, introduzca su clave de Google AI Studio,
-suba una foto JPG, PNG o WebP (máximo 10 MB), o tome una fotografía con la cámara.
-Seleccione Gemini Flash y pulse **Analizar factura con Gemini**.
-
-Revise la tabla editable: nombres, etiqueta, cantidades, costos, precios de venta, categoría
-y código de barras. Los datos ilegibles quedan pendientes de corrección. Los nuevos nombres
-se guardan en mayúsculas; la etiqueta admite máximo 16 caracteres y la categoría debe existir.
-Si un artículo coincide por código o por nombre exacto único, se propone asociarlo al producto
-existente. Puede cambiar la asociación; los productos existentes solo reciben stock y conservan
-sus precios. Los nuevos reutilizan el generador EAN-8 y la creación habitual de productos.
-
-La asociación usa búsqueda por palabras, etiqueta o código, con resultados que muestran stock
-y categoría. Los nombres parecidos aparecen como sugerencias: hay que elegir el producto o
-confirmar expresamente que se trata de otro antes de crearlo. El parecido nunca asocia por sí
-solo dos presentaciones. Al elegir un producto se muestra el stock actual y cuánto quedaría.
-Las coincidencias se vuelven a comprobar con el catálogo actualizado antes de guardar.
-
-Marque las filas revisadas y confirme para guardar. El borrador se conserva localmente y cada
-fila tiene progreso persistente para impedir que un reintento duplique el ingreso. Si una escritura
-queda interrumpida, esa fila se bloquea: revise stock e historial antes de eliminarla del borrador
-y completar manualmente lo pendiente. Luego puede abrir Etiquetas con los productos importados.
-Las dos opciones de cantidades y la selección con Shift se mantienen.
-
-La clave no se guarda ni se incluye en el instalador. Solo la foto y las categorías se envían
-a Google; Gemini no accede a la base. Use un proyecto sin facturación habilitada para limitarse
-al nivel gratuito, sujeto a las cuotas de Google. Consulte [precios y condiciones](https://ai.google.dev/gemini-api/docs/pricing).
-En el nivel gratuito Google puede utilizar el contenido para mejorar sus productos.
-
-Pruebas: `npm run test:facturas` (incluye SQLite temporal, requiere Python),
-`npm run test:etiquetas`, `cargo test --release --lib` desde `src-tauri`.
-
-Desde 1.2.2, las solicitudes utilizan razonamiento bajo en 3.8 y mínimo en 3.5 para reducir
-latencia. Las fotos grandes se ajustan a un máximo de 2560 píxeles y se comprimen en JPEG
-de calidad alta; puede desactivar esta opción si necesita enviar la imagen original.
-La ventana muestra el tamaño enviado y el tiempo de espera. Los rechazos muestran modelo,
-código HTTP y detalle de Google, ocultando la clave. El acceso y las cuotas de cada modelo
-dependen del proyecto; 2.5 está limitado por Google a usuarios anteriores.
-
-Desde 1.2.3 se utilizan los valores REST `low` y `minimal` en minúsculas. Si Google
-rechaza el razonamiento opcional o devuelve el error genérico de argumento inválido,
-se reintenta una sola vez sin `thinkingConfig`, conservando imagen, instrucciones y esquema.
-No se reintenta automáticamente ante cuotas, permisos ni timeouts. Los errores incluyen
-los detalles adicionales del proveedor cuando existen, siempre ocultando la clave.
-
-Desde 1.2.4 se utiliza `generationConfig.responseFormat.text.schema`, según el formato REST
-actual de Google. El reintento compatible pide JSON sin esquema del proveedor ni parámetros
-de razonamiento; los datos siguen pasando la validación local y la revisión antes de guardar.
-**Probar conexión** envía un texto breve sin foto ni esquema de factura y utiliza una solicitud
-de la cuota. Sirve para separar el acceso al modelo de problemas con los datos enviados.
-
-Desde 1.2.5, `responseFormat.text.mimeType` envía el enum REST `APPLICATION_JSON`.
-El MIME de las fotos permanece como `image/jpeg`, `image/png` o `image/webp`.
-La prueba de transporte HTTP verifica el valor del enum antes de aceptar la solicitud.
-
-Verificación: `npm run test:etiquetas`. Instalador Windows: `npm run tauri -- build --bundles nsis`.
-
-## Barcode System
-
-The system supports two barcode modes:
-
-1. Factory Barcodes - Real manufacturer codes scanned or entered manually (any digit count)
-2. Internal RCN Codes - Auto-generated EAN-13 codes for products without factory barcodes
-
-When creating a product:
-- If a barcode is provided: validated (numbers only) and checked for uniqueness
-- If barcode field is empty: system auto-generates an EAN-13 code with format:
-  - Prefix: 20 (GS1-reserved for proprietary use)
-  - Consecutive: 10-digit padded sequence
-  - Checksum: EAN-13 standard algorithm (1 digit)
-  - Example: consecutive 15 yields "2000000000152"
-
-This ensures no barcode conflicts and enables internal product identification without factory codes.
-
-For complete details, see `docs/CODIGOS_BARRAS.md`.
-
-## File Structure
-
+```mermaid
+flowchart LR
+  UI["React + TypeScript"] --> DB[("SQLite local")]
+  UI --> TAURI["Tauri / Rust"]
+  TAURI --> OCR["RapidOCR local"]
+  TAURI --> PRINT["Impresión ESC/POS y TSPL"]
+  TAURI --> AI["Google AI Studio · OpenRouter · Groq"]
+  UI --> PDF["PDF y factura electrónica"]
 ```
+
+La lógica de negocio vive en TypeScript. El backend Rust se encarga de la ventana, los plugins de Tauri, la impresión RAW, el OCR local y la comunicación con los proveedores de IA.
+
+### Estructura del proyecto
+
+```text
 src/
-  components/          - Reusable React components
-  database/           - SQLite connection and data access layer
-  pages/              - Full-page components (Ventas, Productos, etc.)
-  services/           - Business logic and external service integrations
-  utils/              - Helper functions and utilities
-  config/             - Application configuration
-  App.tsx             - Main app component with routing
-  App.css             - Tailwind CSS with design tokens
+  components/     Componentes reutilizables de la interfaz
+  config/         Configuración de campos y formularios
+  database/       Conexión SQLite, esquema y acceso a datos
+  pages/          Ventas, Inventario, Productos, Etiquetas, Clientes, Reportes, Configuración
+  services/       Respaldos e integración con proveedores de IA
+  utils/          Facturación, ESC/POS, TSPL, autenticación y utilidades
+  App.tsx         Rutas y estado principal de la aplicación
+  App.css         Tailwind CSS y tokens de diseño
 
 src-tauri/
-  src/                - Rust backend code
-  Cargo.toml          - Rust dependencies
+  src/            Backend Rust: impresión, OCR y análisis de facturas
+  resources/      Modelos y licencias de OCR
+  icons/          Iconos de la aplicación
 
 docs/
-  CODIGOS_BARRAS.md   - Barcode system documentation
+  capturas/       Capturas usadas en el README
+  assets/         Recursos gráficos
+  OCR-DISTRIBUCION.md
+  MODELOS-IA.md
+  CODIGOS_BARRAS.md
 
-.github/
-  copilot-instructions.md - Copilot AI assistant guidelines
+scripts/          Preparación de OCR y pruebas de desarrollo
 ```
 
-## Development Guidelines
+### Convenciones
 
-### TypeScript
+- TypeScript en modo estricto, sin `any` sin justificación.
+- Componentes funcionales con hooks.
+- Nombres de dominio en español: `producto`, `venta`, `cliente`, `stock`, `cantidad`.
+- Acceso a datos siempre mediante `getDbConnection()` en `src/database/db.ts`.
+- Errores de negocio con `ErrorNegocio` y mensajes traducidos en la interfaz.
+- Tailwind CSS con los tokens `pos-dark`, `pos-bg`, `pos-primary` y `pos-primary-dark`.
 
-- Strict mode enabled (`strict: true`)
-- No `any` types without discussion
-- All data must be typed
-- Unused variables/parameters will cause build errors
+---
 
-### Components
+## Pruebas
 
-- Functional components with hooks only (no class components)
-- Props must be typed with interfaces
-- Use Spanish domain variable names (producto, venta, cliente, stock, cantidad)
+```bash
+# Frontend y TypeScript
+npm run build
 
-### Database Access
+# Etiquetas
+npm run test:etiquetas
 
-Always use `getDbConnection()` from `src/database/db.ts`. Never call `Database.load()` directly.
+# Importador de facturas (requiere Python en desarrollo)
+npm run test:facturas
 
-```typescript
-import { getDbConnection, crearProducto, type Producto } from '../database/db';
-
-const db = await getDbConnection();
-const nuevoProducto = await crearProducto(producto);
+# Backend Rust
+cargo test --release --manifest-path src-tauri/Cargo.toml --lib
 ```
 
-### Error Handling
+Las pruebas del importador usan una base SQLite temporal y llamadas simuladas a la IA. Python solo se utiliza en ese entorno de desarrollo; la aplicación distribuida no lo requiere.
 
-Use `ErrorNegocio` class for business logic errors:
+---
 
-```typescript
-import { ErrorNegocio, mensajeError } from '../database/db';
+## Documentación
 
-throw new ErrorNegocio('CODIGO_DUPLICADO', 'Ya existe un producto con ese código de barras.');
-```
+- [Distribución de OCR](docs/OCR-DISTRIBUCION.md)
+- [Selección de modelos de IA](docs/MODELOS-IA.md)
+- [Sistema de códigos de barras](docs/CODIGOS_BARRAS.md)
+- [Guía de contribución](CONTRIBUTING.md)
+- [Licencia](LICENSE)
 
-The UI automatically translates error codes to user-friendly messages.
+---
 
-### Styling
+## Contribuir
 
-Tailwind CSS v4 with custom design tokens in `src/App.css`:
+Las contribuciones son bienvenidas. Antes de abrir un pull request:
 
-- `pos-dark`: #1e293b (sidebar)
-- `pos-bg`: #f1f5f9 (main background)
-- `pos-primary`: #10b981 (primary accent)
-- `pos-primary-dark`: #059669 (hover states)
+1. Lee [`CONTRIBUTING.md`](CONTRIBUTING.md).
+2. Usa commits semánticos (`feat:`, `fix:`, `docs:`, `refactor:`).
+3. Verifica que `npm run build` pase.
+4. Prueba los flujos que afecten al usuario.
+5. Actualiza la documentación cuando corresponda.
 
-Use in classes: `bg-pos-primary`, `text-pos-dark`, etc.
+---
 
-## Testing
+## Licencia
 
-No test runner configured yet. Manual testing is required.
+MAGAJI se distribuye bajo la licencia **Apache 2.0**. Consulta [`LICENSE`](LICENSE) para más detalles.
 
-For barcode algorithm validation, see `src/utils/ean13-tests.ts`:
+---
 
-```typescript
-import { testEAN8Checksum, debugEAN8 } from '../utils/ean13-tests';
+## Autores
 
-testEAN8Checksum();  // Run automated tests
-debugEAN8("2000015");  // Debug specific code
-```
+Desarrollado por **Jose** y **Christian Menco** para la gestión de inventario y ventas de pequeños y medianos negocios.
 
-## Configuration
+<div align="center">
 
-Application configuration is stored in localStorage via `src/utils/factura.ts`:
+**MAGAJI** · Hecho para vender mejor.
 
-```typescript
-import { obtenerConfigNegocio, guardarConfigNegocio } from '../utils/factura';
-
-const config = obtenerConfigNegocio();
-config.ivaPorcentaje = 19;
-guardarConfigNegocio(config);
-```
-
-## Database
-
-- File location: `inventario.db` (SQLite)
-- Auto-initialized on app startup via `initDB()`
-- Schema migrations handled with ALTER TABLE statements
-- Backup service available in `src/services/backup.ts`
-
-## Authentication
-
-Login system implemented via `LoginScreen.tsx`. Users must authenticate before accessing application features.
-
-## Contributing
-
-1. Follow TypeScript strict mode guidelines
-2. Use semantic commits
-3. Update relevant documentation when changing features
-4. Ensure `npm run build` passes before committing
-5. Test manual workflows that affect user-facing features
-
-## IDE Setup
-
-Recommended tools:
-
-- VS Code with Tauri extension
-- VS Code Rust Analyzer extension
-- TypeScript language server support
-
-## License
-
-See LICENSE file for details.
-
-## Author
-
-Created by Jose & Christian Menco for inventory and sales management.
+</div>

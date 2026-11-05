@@ -144,6 +144,17 @@ html, body, #root {
   }
 }
 
+/* Ocultar las flechas nativas de los campos numéricos (precios, stock, cantidades). */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
 /* Ocultar iconos nativos de revelar/borrar contraseñas (para evitar superposición con el icono de ojo personalizado) */
 input[type="password"]::-ms-reveal,
 input[type="password"]::-ms-clear,

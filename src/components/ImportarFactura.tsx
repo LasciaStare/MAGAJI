@@ -5,7 +5,7 @@ import {
   Info, Save, RefreshCw, ScanLine, CircleCheck, TriangleAlert, Settings2, FileText, ChevronDown,
 } from 'lucide-react';
 import { importarFilaFactura, obtenerProductos, obtenerProgresoFactura, type Producto } from '../database/db';
-import { erroresFila, esFilaFactura, normalizarNombre, type FilaFactura } from '../utils/importacionFactura';
+import { duplicadosEnLote, erroresFila, esFilaFactura, type FilaFactura } from '../utils/importacionFactura';
 import { analizarFacturaOcrIA, ejecutarOcrFactura, probarConexionIA, type ResultadoOCR } from '../services/facturaIA';
 import { guardarConfigNegocio, obtenerConfigNegocio, NUEVE_CATEGORIAS_DEFECTO, type ConfigNegocio } from '../utils/factura';
 import SelectorModeloIA from './SelectorModeloIA';
@@ -68,7 +68,18 @@ export default function ImportarFactura({ onClose, onImportado }: { onClose: () 
   const seleccionadas = borrador.filas.filter(f => seleccion.has(f.clave));
   const totalUnidades = seleccionadas.reduce((suma, fila) => suma + (fila.cantidad ?? 0), 0);
   const nuevas = seleccionadas.filter(f => f.producto_id === null).length;
-  const listas = seleccionadas.filter(f => erroresFila(f, productos).length === 0).length;
+  // Solo chocan entre sí las filas nuevas marcadas: las asociadas se suman al stock existente.
+  const duplicados = duplicadosEnLote(seleccionadas);
+  const numeroFila = (clave: string) => borrador.filas.findIndex(f => f.clave === clave) + 1;
+  const erroresDeFila = (fila: FilaFactura) => {
+    const errores = erroresFila(fila, productos);
+    const duplicado = duplicados.get(fila.clave);
+    if (!duplicado) return errores;
+    const otra = numeroFila(duplicado.claveOtra);
+    return [...errores, otra > 0 ? `${duplicado.mensaje} (también en la fila ${otra})` : duplicado.mensaje];
+  };
+  const pendientes = seleccionadas.filter(f => erroresDeFila(f).length > 0).length;
+  const listas = seleccionadas.length - pendientes;
   const todasSeleccionadas = borrador.filas.length > 0 && seleccionadas.length === borrador.filas.length;
   const campo = 'border border-slate-300 rounded-lg px-3 py-2 w-full text-sm bg-white outline-none focus:border-pos-primary focus:ring-1 focus:ring-pos-primary';
 
@@ -210,18 +221,23 @@ export default function ImportarFactura({ onClose, onImportado }: { onClose: () 
       const actuales = await obtenerProductos().catch(() => null);
       if (!actuales) { setError('No se pudo consultar el stock actual.'); return; }
       setProductos(actuales);
-      const codigos = new Set<string>();
-      const nombres = new Set<string>();
       for (const fila of filasAImportar) {
         const errores = erroresFila(fila, actuales);
-        if (errores.length) { setError(`${fila.nombre || 'Fila sin nombre'}: ${errores.join(', ')}.`); return; }
-        if (fila.producto_id === null) {
-          const nombre = normalizarNombre(fila.nombre);
-          if (nombres.has(nombre) || (fila.codigo_barras && codigos.has(fila.codigo_barras))) {
-            setError('Hay productos nuevos repetidos. Combine sus cantidades o corrija sus nombres/códigos.'); return;
-          }
-          nombres.add(nombre); if (fila.codigo_barras) codigos.add(fila.codigo_barras);
+        if (errores.length) { setError(`Fila ${numeroFila(fila.clave)}${fila.nombre ? ` (${fila.nombre})` : ''}: ${errores.join(', ')}.`); return; }
+      }
+      const repetidos = duplicadosEnLote(filasAImportar);
+      if (repetidos.size) {
+        const paresVistos = new Set<string>();
+        const lineas: string[] = [];
+        for (const fila of filasAImportar) {
+          const duplicado = repetidos.get(fila.clave);
+          if (!duplicado) continue;
+          const par = [fila.clave, duplicado.claveOtra].sort().join('|');
+          if (paresVistos.has(par)) continue;
+          paresVistos.add(par);
+          lineas.push(`• Filas ${numeroFila(fila.clave)} y ${numeroFila(duplicado.claveOtra)}: ${duplicado.mensaje}`);
         }
+        setError(`Hay productos nuevos repetidos:\n${lineas.join('\n')}\nCombine sus cantidades o corrija sus nombres/códigos.`); return;
       }
       if (filasAImportar.some(f => f.producto_id === null && f.precio_venta! < f.precio_compra!) &&
         !window.confirm('Hay productos con precio de venta menor al costo. ¿Importarlos de todas formas?')) return;
@@ -392,8 +408,8 @@ export default function ImportarFactura({ onClose, onImportado }: { onClose: () 
               <p className="text-xs text-slate-500">Al asociar un producto existente se suma la cantidad al stock y se conservan su ficha y sus precios.</p>
 
               <div className="space-y-3">
-                {borrador.filas.map(fila => {
-                  const errores = erroresFila(fila, productos);
+                {borrador.filas.map((fila, indice) => {
+                  const errores = erroresDeFila(fila);
                   const asociado = fila.producto_id !== null;
                   const marcada = seleccion.has(fila.clave);
                   const etiquetaCampo = 'block text-[11px] font-semibold text-slate-500 mb-1';
@@ -407,7 +423,7 @@ export default function ImportarFactura({ onClose, onImportado }: { onClose: () 
                         <div className="flex-1 min-w-0 space-y-3">
                           <div className="grid grid-cols-1 lg:grid-cols-[2fr_1.4fr] gap-3">
                             <div>
-                              <label className={etiquetaCampo}>Producto</label>
+                              <label className={etiquetaCampo}>Producto <span className="font-normal text-slate-400">· Fila {indice + 1}</span></label>
                               <input aria-label="Nombre del producto" disabled={asociado} maxLength={300} className={campo} value={fila.nombre} onChange={e => editar(fila.clave, { nombre: e.target.value.toUpperCase() })} />
                             </div>
                             <AsociarProductoFactura fila={fila} productos={productos}
@@ -468,8 +484,9 @@ export default function ImportarFactura({ onClose, onImportado }: { onClose: () 
       </div>
 
       <footer className="p-4 border-t border-slate-200 flex flex-wrap gap-3 justify-end items-center bg-slate-50 rounded-b-2xl">
+        {!ocupado && !errorBorrador && pendientes > 0 && <p className="text-xs text-amber-700 mr-auto">Faltan {pendientes} {pendientes === 1 ? 'fila' : 'filas'} por revisar o corregir.</p>}
         <button disabled={ocupado || !borrador.guardados.length} className="border border-slate-300 rounded-lg px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 disabled:opacity-50" onClick={() => navigate('/etiquetas', { state: { productIdsToPrint: borrador.guardados } })}>Seleccionar etiquetas de productos importados</button>
-        <button disabled={ocupado || !!errorBorrador || !seleccionadas.length || seleccionadas.some(f => erroresFila(f, productos).length > 0)} className="bg-pos-primary hover:bg-pos-primary-dark text-white font-bold rounded-lg px-5 py-2.5 text-sm shadow-md disabled:opacity-50 disabled:cursor-not-allowed" onClick={confirmar}>Importar seleccionadas ({seleccionadas.length})</button>
+        <button disabled={ocupado || !!errorBorrador || !seleccionadas.length || pendientes > 0} className="bg-pos-primary hover:bg-pos-primary-dark text-white font-bold rounded-lg px-5 py-2.5 text-sm shadow-md disabled:opacity-50 disabled:cursor-not-allowed" onClick={confirmar}>Importar seleccionadas ({seleccionadas.length})</button>
       </footer>
   </dialog>;
 }

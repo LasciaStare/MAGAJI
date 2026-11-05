@@ -176,6 +176,42 @@ export function filasDesdeIA(datos: unknown, productos: Producto[]): FilaFactura
   });
 }
 
+export interface DuplicadoLote {
+  /** Mensaje listo para mostrar en la fila afectada. */
+  mensaje: string;
+  /** Clave de la otra fila nueva con la que choca. */
+  claveOtra: string;
+}
+
+/**
+ * Detecta choques entre filas nuevas del mismo lote (mismo nombre normalizado
+ * o mismo código de barras). No compara contra el catálogo: eso lo hace erroresFila.
+ */
+export function duplicadosEnLote(filas: FilaFactura[]): Map<string, DuplicadoLote> {
+  const porNombre = new Map<string, FilaFactura>();
+  const porCodigo = new Map<string, FilaFactura>();
+  const duplicados = new Map<string, DuplicadoLote>();
+  const registrar = (actual: FilaFactura, otra: FilaFactura, mensaje: string) => {
+    if (!duplicados.has(actual.clave)) duplicados.set(actual.clave, { mensaje, claveOtra: otra.clave });
+    if (!duplicados.has(otra.clave)) duplicados.set(otra.clave, { mensaje, claveOtra: actual.clave });
+  };
+  for (const fila of filas) {
+    if (fila.producto_id !== null) continue;
+    const nombre = normalizarNombre(fila.nombre);
+    if (nombre) {
+      const previa = porNombre.get(nombre);
+      if (previa) registrar(fila, previa, `Nombre repetido: «${fila.nombre}»`);
+      else porNombre.set(nombre, fila);
+    }
+    if (fila.codigo_barras) {
+      const previa = porCodigo.get(fila.codigo_barras);
+      if (previa) registrar(fila, previa, `Código de barras repetido: ${fila.codigo_barras}`);
+      else porCodigo.set(fila.codigo_barras, fila);
+    }
+  }
+  return duplicados;
+}
+
 export function erroresFila(fila: FilaFactura, productos: Producto[]): string[] {
   const errores: string[] = [];
   if (!fila.clave.trim() || fila.clave.length > 100) errores.push('Identificador de fila inválido');

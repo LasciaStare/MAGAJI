@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Edit, Trash2, PackageSearch, X, Barcode, Save, Folder, Layers, Search, Printer } from 'lucide-react';
+import { Plus, Edit, Trash2, PackageSearch, X, Barcode, Save, Folder, Layers, Search, Printer, TriangleAlert } from 'lucide-react';
 import { crearProducto, obtenerProductos, actualizarProducto, eliminarProducto, mensajeError, Producto } from '../database/db';
 import { mostrarAlerta } from '../utils/alertGlobal';
+import { normalizarNombre } from '../utils/importacionFactura';
 
 export default function Productos() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -47,6 +48,17 @@ export default function Productos() {
   const categoriasFiltradas = categoriasExistentes.filter(cat =>
     !busquedaCategoria || cat.toLowerCase().includes(busquedaCategoria.toLowerCase())
   );
+
+  // Aviso en vivo: mismo nombre normalizado o mismo código de barras que otro producto.
+  const duplicados = useMemo(() => {
+    const nombre = normalizarNombre(formData.nombre);
+    const codigo = formData.codigo_barras.trim();
+    if (!nombre && !codigo) return [];
+    return listaProductos.filter(p => p.id !== idProductoEditando && (
+      (codigo !== '' && p.codigo_barras === codigo) ||
+      (nombre !== '' && normalizarNombre(p.nombre) === nombre)
+    ));
+  }, [formData.nombre, formData.codigo_barras, listaProductos, idProductoEditando]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target as HTMLInputElement;
@@ -103,6 +115,12 @@ export default function Productos() {
     if (!Number.isInteger(formData.stock_minimo) || formData.stock_minimo < 0) {
       mostrarAlerta("El stock mínimo debe ser un número entero igual o mayor a 0.", 'advertencia');
       return;
+    }
+    // Aviso (no bloqueante) si ya existe otro producto con el mismo nombre o código.
+    if (duplicados.length) {
+      const detalle = duplicados.map(p => `• ${p.nombre} (${p.codigo_barras})`).join('\n');
+      const accion = idProductoEditando === null ? 'crear otro producto' : 'guardar los cambios';
+      if (!confirm(`Ya existe un producto igual:\n${detalle}\n\n¿Deseas ${accion} de todas formas?`)) return;
     }
     // Aviso (no bloqueante) si se vendería por debajo del costo
     if (formData.precio_compra > 0 && formData.precio_venta < formData.precio_compra) {
@@ -306,9 +324,9 @@ export default function Productos() {
       {/* MODAL DE REGISTRO / EDICIÓN */}
       {isModalOpen && (
         <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 pos-overlay-in">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl flex flex-col max-h-[88vh] pos-modal-panel">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-3xl flex flex-col max-h-[92vh] pos-modal-panel">
             
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center shrink-0">
+            <div className="px-5 py-4 border-b border-slate-100 flex justify-between items-center shrink-0">
               <h3 className="text-xl font-bold text-slate-800">
                 {idProductoEditando !== null ? 'Editar Producto' : 'Registrar Nuevo Producto'}
               </h3>
@@ -317,11 +335,11 @@ export default function Productos() {
               </button>
             </div>
 
-            <div className="p-6 overflow-auto space-y-6">
+            <div className="p-5 overflow-auto space-y-4">
               <div>
-                <h4 className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2"><Barcode className="w-4 h-4"/> Identificación</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="md:col-span-2">
+                <h4 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2"><Barcode className="w-4 h-4"/> Identificación</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="sm:col-span-2">
                     <label className="block text-xs font-medium text-slate-500 mb-1">
                       Código de Barras 
                       <span className="text-slate-400 text-[10px] ml-1">(Opcional - se genera automáticamente EAN-8 si está vacío)</span>
@@ -336,15 +354,14 @@ export default function Productos() {
                       autoFocus 
                     />
                   </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-xs font-medium text-slate-500 mb-1">Nombre del Producto</label>
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-medium text-slate-500 mb-1">Nombre del Producto <span className="text-slate-400 text-[10px]">(se usa en facturas, inventario y reportes)</span></label>
                     <input name="nombre" value={formData.nombre} onChange={handleInputChange} type="text" placeholder="Ej. Coca Cola 600ml" className="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:border-pos-primary" />
-                    <p className="mt-1 text-[11px] text-slate-400">Se usa en facturas, inventario y reportes.</p>
                   </div>
-                  <div className="md:col-span-2">
+                  <div>
                     <label className="block text-xs font-medium text-slate-500 mb-1">
                       Nombre en Etiqueta
-                      <span className="text-slate-400 text-[10px] ml-1">(Opcional - máximo 16 caracteres)</span>
+                      <span className="text-slate-400 text-[10px] ml-1">(Opcional, máx. 16)</span>
                     </label>
                     <input name="nombre_etiqueta" value={formData.nombre_etiqueta} onChange={handleInputChange} type="text" maxLength={16} placeholder="Corto para la etiqueta (si vacío, se usa el nombre recortado)" className="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:border-pos-primary" />
                     <p className="mt-1 text-[11px] text-slate-400">{formData.nombre_etiqueta.length}/16 caracteres</p>
@@ -370,12 +387,24 @@ export default function Productos() {
                 </div>
               </div>
 
-              <div className="border-t border-slate-100 my-2"></div>
+              {duplicados.length > 0 && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-amber-800">
+                  <p className="flex items-center gap-2 text-xs font-bold"><TriangleAlert className="w-4 h-4 shrink-0" /> Ya existe un producto igual</p>
+                  <ul className="mt-1 space-y-0.5 text-[11px]">
+                    {duplicados.map(p => (
+                      <li key={p.id}>• {p.nombre} · código {p.codigo_barras} · stock {p.stock}</li>
+                    ))}
+                  </ul>
+                  <p className="mt-1 text-[10px] text-amber-700">Si es el mismo producto, ciérrelo y edítelo para sumar stock en lugar de crear un duplicado.</p>
+                </div>
+              )}
+
+              <div className="border-t border-slate-100"></div>
 
               <div>
-                <h4 className="text-sm font-bold text-slate-700 mb-4">Precios y Stock</h4>
+                <h4 className="text-sm font-bold text-slate-700 mb-3">Precios y Stock</h4>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <div>
                     <label className="block text-xs font-medium text-slate-500 mb-1">Precio de Compra</label>
                     <input name="precio_compra" value={formData.precio_compra || ''} onChange={handleInputChange} type="number" min="0" step="0.01" className="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:border-pos-primary" />
@@ -397,7 +426,7 @@ export default function Productos() {
 
             </div>
 
-            <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3 rounded-b-2xl shrink-0">
+            <div className="px-5 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3 rounded-b-2xl shrink-0">
               <button onClick={() => setIsModalOpen(false)} className="px-6 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-medium hover:bg-slate-100 transition">Cancelar</button>
               <button onClick={handleGuardar} className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-pos-primary text-white font-bold hover:bg-pos-primary-dark transition shadow-md">
                 <Save className="w-4 h-4"/> {idProductoEditando !== null ? 'Guardar Cambios' : 'Guardar Producto'}

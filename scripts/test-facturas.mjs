@@ -16,7 +16,7 @@ const codigo = ts.transpileModule(fuente, { compilerOptions: { module: ts.Module
   .replace(/from ['"]\.\/factura['"]/, `from '${moduloFactura}'`);
 const modulo = `data:text/javascript;base64,${Buffer.from(codigo).toString('base64')}`;
 const { filasDesdeIA, erroresFila, proponerCoincidencia, esFilaFactura, dimensionesFactura,
-  sugerirProductosExistentes, buscarProductosFactura, asociarFilaFactura } = await import(modulo);
+  sugerirProductosExistentes, buscarProductosFactura, asociarFilaFactura, duplicadosEnLote } = await import(modulo);
 assert.deepEqual(dimensionesFactura(6200,3100), { ancho:2560,alto:1280 });
 assert.deepEqual(dimensionesFactura(3100,6200), { ancho:1280,alto:2560 });
 assert.deepEqual(dimensionesFactura(1690,1472), { ancho:1690,alto:1472 });
@@ -86,6 +86,32 @@ assert.equal(esFilaFactura(revisada),true);
 assert.equal(esFilaFactura({...revisada,coincidencias_descartadas:['1']}),false);
 assert.equal(esFilaFactura({...revisada,coincidencias_descartadas:[-1]}),false);
 console.log('OK: búsqueda por palabras, etiqueta y código; sugerencias sin fusionar variantes; revisión explícita y catálogo actualizado.');
+
+// Los choques dentro del lote deben señalar las filas implicadas, no solo avisar en general.
+const loteNombre = duplicadosEnLote([
+  { ...aprobado, clave: 'lote-a', nombre: 'CANDADO BICICLETA CON CLAVE*300' },
+  { ...aprobado, clave: 'lote-b', nombre: 'candado   bicicleta con clave 300' },
+]);
+assert.equal(loteNombre.size, 2);
+assert.equal(loteNombre.get('lote-a').claveOtra, 'lote-b');
+assert.equal(loteNombre.get('lote-b').claveOtra, 'lote-a');
+assert.match(loteNombre.get('lote-a').mensaje, /Nombre repetido/);
+const loteCodigo = duplicadosEnLote([
+  { ...aprobado, clave: 'lote-c', nombre: 'PRODUCTO UNO', codigo_barras: '1234567890123' },
+  { ...aprobado, clave: 'lote-d', nombre: 'PRODUCTO DOS', codigo_barras: '1234567890123' },
+]);
+assert.equal(loteCodigo.size, 2);
+assert.match(loteCodigo.get('lote-c').mensaje, /Código de barras repetido/);
+assert.equal(duplicadosEnLote([
+  { ...aprobado, clave: 'lote-e', nombre: 'MISMO NOMBRE', producto_id: 1 },
+  { ...aprobado, clave: 'lote-f', nombre: 'MISMO NOMBRE', producto_id: 2 },
+  { ...aprobado, clave: 'lote-g', nombre: 'MISMO NOMBRE', producto_id: null },
+]).size, 0); // Solo choca una fila nueva contra otra nueva.
+assert.equal(duplicadosEnLote([
+  { ...aprobado, clave: 'lote-h', nombre: 'PRODUCTO DISTINTO A' },
+  { ...aprobado, clave: 'lote-i', nombre: 'PRODUCTO DISTINTO B' },
+]).size, 0);
+console.log('OK: duplicados del lote con nombre o código señalan ambas filas; las asociadas no chocan.');
 
 // Comprobar preparación y MIME de la foto con APIs de navegador simuladas, sin enviar datos.
 const originales = Object.fromEntries(['FileReader','createImageBitmap','document'].map(k => [k,globalThis[k]]));

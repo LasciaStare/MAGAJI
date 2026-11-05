@@ -56,6 +56,16 @@ function App() {
       .catch(console.error);
   }, []);
 
+  useEffect(() => {
+    // La rueda del mouse no debe modificar los campos numéricos (precios, stock, cantidades).
+    // Al girar sobre uno, se quita el foco antes de que el navegador aplique el cambio.
+    const alGirarRueda = (e: WheelEvent) => {
+      if (e.target instanceof HTMLInputElement && e.target.type === 'number') e.target.blur();
+    };
+    document.addEventListener('wheel', alGirarRueda, { capture: true, passive: true });
+    return () => document.removeEventListener('wheel', alGirarRueda, { capture: true });
+  }, []);
+
   const [alerta, setAlerta] = useState<EstadoAlerta | null>(null);
 
   const cerrarAlerta = useCallback(() => setAlerta(null), []);
